@@ -1,0 +1,28 @@
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: git config user.name "github-actions"
+      - run: git config user.email "actions@github.com"
+
+      - run: npm install
+      - run: npm run build
+
+      - run: |
+          git checkout -B build
+          cp -r dist ..
+          rm -rf *
+          cp -r ../dist/* .
+          git add .
+          git commit -m "Deploy built app"
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }} build --force
