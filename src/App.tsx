@@ -13,29 +13,40 @@ function App() {
 
   return (
     <AppProvider>
-      <div className="min-h-screen bg-gradient-to-br from-pink-300 via-pink-200 to-blue-300 overflow-hidden">
-        <AnimatePresence mode="wait">
-          {currentScreen === 'signin' && (
-            <SignInScreen key="signin" onNext={() => setCurrentScreen('location')} />
-          )}
-          {currentScreen === 'location' && (
-            <LocationScreen key="location" onNext={() => setCurrentScreen('quiz')} />
-          )}
-          {currentScreen === 'quiz' && (
-            <QuizScreen 
-              key="quiz" 
-              onBack={() => setCurrentScreen('location')}
-              onComplete={() => setCurrentScreen('results')}
-            />
-          )}
-          {currentScreen === 'results' && (
-            <ResultsScreen 
-              key="results" 
-              onRestart={() => setCurrentScreen('signin')}
-            />
-          )}
-        </AnimatePresence>
-      </div>
+      <div className="min-h-screen relative overflow-hidden">
+  {/* Background Image */}
+  <div 
+    className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
+    style={{
+      backgroundImage: `url('/images/bg2.png')`
+    }}
+  />
+
+  {/* App Content */}
+  <div className="relative z-10 min-h-screen">
+    <AnimatePresence mode="wait">
+      {currentScreen === 'signin' && (
+        <SignInScreen key="signin" onNext={() => setCurrentScreen('location')} />
+      )}
+      {currentScreen === 'location' && (
+        <LocationScreen key="location" onNext={() => setCurrentScreen('quiz')} />
+      )}
+      {currentScreen === 'quiz' && (
+        <QuizScreen 
+          key="quiz" 
+          onBack={() => setCurrentScreen('location')}
+          onComplete={() => setCurrentScreen('results')}
+        />
+      )}
+      {currentScreen === 'results' && (
+        <ResultsScreen 
+          key="results" 
+          onRestart={() => setCurrentScreen('signin')}
+        />
+      )}
+    </AnimatePresence>
+  </div>
+</div>
     </AppProvider>
   );
 }

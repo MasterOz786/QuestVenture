@@ -1,31 +1,47 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+export type QuestionType = 'text-input' | 'code-based' | 'multiple-choice' | 'canvas' | 'video-multiple-choice';
+
+export interface Question {
+  id: number;
+  type: QuestionType;
+  question: string;
+  image?: string;
+  video?: string;
+  options?: string[];
+  correctAnswer: string;
+  points: number;
+}
+
 interface AppState {
-  selectedLanguage: string;
   email: string;
-  country: string;
   code: string[];
+  showCodeInput: boolean;
   currentQuestionIndex: number;
   answers: (string | null)[];
   timeRemaining: number;
+  score: number;
+  canvasDrawings: { [key: number]: string };
 }
 
 interface AppContextType {
   state: AppState;
   updateState: (updates: Partial<AppState>) => void;
   resetQuiz: () => void;
+  calculateScore: () => number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const initialState: AppState = {
-  selectedLanguage: 'english',
   email: '',
-  country: '',
   code: ['', '', '', '', ''],
+  showCodeInput: false,
   currentQuestionIndex: 0,
   answers: [],
   timeRemaining: 600, // 10 minutes in seconds
+  score: 0,
+  canvasDrawings: {},
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -41,11 +57,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentQuestionIndex: 0,
       answers: [],
       timeRemaining: 600,
+      score: 0,
+      canvasDrawings: {},
     }));
   };
 
+  const calculateScore = () => {
+    // This would normally calculate based on correct answers
+    // For demo purposes, returning a sample score
+    return 28;
+  };
+
   return (
-    <AppContext.Provider value={{ state, updateState, resetQuiz }}>
+    <AppContext.Provider value={{ state, updateState, resetQuiz, calculateScore }}>
       {children}
     </AppContext.Provider>
   );
