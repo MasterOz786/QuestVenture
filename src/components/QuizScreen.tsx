@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Clock, ArrowLeft } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import QuestHeader from './QuestHeader';
 
 interface QuizScreenProps {
   onBack: () => void;
+  onComplete: () => void;
 }
 
 const questions = [
@@ -34,7 +35,7 @@ const questions = [
   }
 ];
 
-export default function QuizScreen({ onBack }: QuizScreenProps) {
+export default function QuizScreen({ onBack, onComplete }: QuizScreenProps) {
   const { state, updateState } = useAppContext();
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [textAnswer, setTextAnswer] = useState<string>('');
@@ -65,8 +66,8 @@ export default function QuizScreen({ onBack }: QuizScreenProps) {
     updateState({ answers: newAnswers });
 
     if (isLastQuestion) {
-      // Quiz completed
-      console.log('Quiz completed!', newAnswers);
+      // Quiz completed - navigate to leaderboard
+      onComplete();
     } else {
       updateState({ currentQuestionIndex: state.currentQuestionIndex + 1 });
       setSelectedAnswer('');
@@ -77,78 +78,40 @@ export default function QuizScreen({ onBack }: QuizScreenProps) {
   const isAnswerSelected = currentQuestion.type === 'multiple-choice' ? selectedAnswer !== '' : textAnswer.trim() !== '';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -100 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen p-6 flex flex-col justify-center max-w-md mx-auto"
-    >
+    <div className="min-h-screen p-6 flex flex-col justify-center max-w-md mx-auto">
       <QuestHeader />
 
       {/* Timer */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-        className="flex items-center justify-center gap-2 mt-6 mb-8"
-      >
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <Clock className="w-6 h-6 text-white" />
-        </motion.div>
+      <div className="flex items-center justify-center gap-2 mt-6 mb-8">
+        <Clock className="w-6 h-6 text-white" />
         <span className="text-3xl font-bold text-white">
           {formatTime(state.timeRemaining)}
         </span>
-      </motion.div>
+      </div>
 
       <AnimatePresence mode="wait">
-        <motion.div
-          key={currentQuestion.id}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          transition={{ duration: 0.5 }}
-          className="flex-1"
-        >
+        <div key={currentQuestion.id} className="flex-1">
           {/* Question Image */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="relative rounded-2xl overflow-hidden mb-6 h-48"
-          >
+          <div className="relative rounded-2xl overflow-hidden mb-6 h-48">
             <img
               src={currentQuestion.image}
               alt="Question"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-          </motion.div>
+          </div>
 
           {/* Question */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="text-2xl font-bold text-black text-center mb-8"
-          >
+          <h1 className="text-2xl font-bold text-black text-center mb-8">
             Q{currentQuestion.id}. {currentQuestion.question}
-          </motion.h1>
+          </h1>
 
           {/* Answer Options */}
           {currentQuestion.type === 'multiple-choice' ? (
             <div className="grid grid-cols-2 gap-3 mb-8">
-              {currentQuestion.options?.map((option, index) => (
-                <motion.button
+              {currentQuestion.options?.map((option) => (
+                <button
                   key={option}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 + index * 0.1, duration: 0.3 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedAnswer(option)}
                   className={`p-4 rounded-xl border-2 font-semibold transition-all duration-300 ${
                     selectedAnswer === option
@@ -157,16 +120,11 @@ export default function QuizScreen({ onBack }: QuizScreenProps) {
                   }`}
                 >
                   {option}
-                </motion.button>
+                </button>
               ))}
             </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              className="mb-8"
-            >
+            <div className="mb-8">
               <input
                 type="text"
                 placeholder="Type your answer here..."
@@ -174,28 +132,23 @@ export default function QuizScreen({ onBack }: QuizScreenProps) {
                 onChange={(e) => setTextAnswer(e.target.value)}
                 className="w-full p-4 rounded-xl border-2 border-red-300 bg-white/30 backdrop-blur-sm placeholder-gray-600 text-gray-800 focus:border-blue-400 focus:outline-none transition-colors duration-300"
               />
-            </motion.div>
+            </div>
           )}
 
           {/* Next Button */}
-          <motion.button
+          <button
             onClick={handleNext}
             disabled={!isAnswerSelected}
-            whileHover={isAnswerSelected ? { scale: 1.02 } : {}}
-            whileTap={isAnswerSelected ? { scale: 0.98 } : {}}
             className={`w-full py-4 rounded-xl font-bold text-xl transition-all duration-300 ${
               isAnswerSelected
-                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl'
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-105'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.5 }}
           >
             {isLastQuestion ? 'Finish Quiz' : 'Next'}
-          </motion.button>
-        </motion.div>
+          </button>
+        </div>
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
