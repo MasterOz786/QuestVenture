@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, FileText, Users, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, LogOut, MapPin } from 'lucide-react';
 import { useAdminContext } from '../../context/AdminContext';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -10,7 +10,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'invoices', label: 'Invoices', icon: FileText },
-    { id: 'clients', label: 'Clients', icon: Users },
+    { id: 'scavenger-hunts', label: 'Scavenger Hunts', icon: MapPin },
+    { id: 'participants', label: 'Participants', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

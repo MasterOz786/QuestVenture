@@ -4,6 +4,10 @@ import AdminLayout from './AdminLayout';
 import AdminDashboard from './AdminDashboard';
 import InvoiceList from './InvoiceList';
 import CreateInvoice from './CreateInvoice';
+import ScavengerHuntList from './ScavengerHuntList';
+import ParticipantsList from './ParticipantsList';
+import AddParticipant from './AddParticipant';
+import AddQuestion from './AddQuestion';
 
 function AdminContent() {
   const { state } = useAdminContext();
@@ -17,6 +21,14 @@ function AdminContent() {
         return <InvoiceList />;
       case 'create-invoice':
         return <CreateInvoice />;
+      case 'scavenger-hunts':
+        return <ScavengerHuntList />;
+      case 'participants':
+        return <ParticipantsList />;
+      case 'add-participant':
+        return <AddParticipant />;
+      case 'add-question':
+        return <AddQuestion />;
       default:
         return <AdminDashboard />;
     }

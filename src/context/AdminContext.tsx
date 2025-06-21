@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Client, Invoice, DashboardStats, InvoiceItem } from '../types/admin';
+import { Client, Invoice, DashboardStats, InvoiceItem, ScavengerHuntEvent, Participant, Question } from '../types/admin';
 
 interface AdminState {
-  currentView: 'dashboard' | 'invoices' | 'create-invoice';
+  currentView: 'dashboard' | 'invoices' | 'create-invoice' | 'scavenger-hunts' | 'participants' | 'add-participant' | 'add-question' | 'create-event' | 'add-ads';
   clients: Client[];
   invoices: Invoice[];
+  scavengerHunts: ScavengerHuntEvent[];
+  participants: Participant[];
+  questions: Question[];
   dashboardStats: DashboardStats;
   selectedInvoice: Invoice | null;
   invoiceForm: Partial<Invoice>;
@@ -19,6 +22,12 @@ interface AdminContextType {
   deleteInvoice: (id: string) => void;
   addInvoiceItem: (item: Omit<InvoiceItem, 'id'>) => void;
   removeInvoiceItem: (itemId: string) => void;
+  addParticipant: (participant: Omit<Participant, 'id' | 'joinedAt'>) => void;
+  deleteParticipant: (id: string) => void;
+  addQuestion: (question: Omit<Question, 'id' | 'createdAt'>) => void;
+  deleteQuestion: (id: string) => void;
+  addScavengerHunt: (hunt: Omit<ScavengerHuntEvent, 'id' | 'createdAt' | 'participantCount' | 'questionCount'>) => void;
+  deleteScavengerHunt: (id: string) => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -89,6 +98,122 @@ const mockInvoices: Invoice[] = [
   }
 ];
 
+const mockScavengerHunts: ScavengerHuntEvent[] = [
+  {
+    id: '1',
+    title: 'Ian Rossen Birthday',
+    webLink: 'https://velitt.digital/event/ian-rossen-birthday',
+    createdAt: '2024-01-15',
+    participantCount: 6,
+    questionCount: 5
+  },
+  {
+    id: '2',
+    title: 't',
+    webLink: 'https://velitt.digital/event/t',
+    createdAt: '2024-02-01',
+    participantCount: 0,
+    questionCount: 0
+  },
+  {
+    id: '3',
+    title: 'Test 1234',
+    webLink: 'https://velitt.digital/event/test-1234',
+    createdAt: '2024-02-15',
+    participantCount: 0,
+    questionCount: 0
+  },
+  {
+    id: '4',
+    title: 'Punda',
+    webLink: 'https://velitt.digital/event/punda',
+    createdAt: '2024-03-01',
+    participantCount: 0,
+    questionCount: 0
+  },
+  {
+    id: '5',
+    title: 'Marian',
+    webLink: 'https://velitt.digital/event/marian',
+    createdAt: '2024-03-10',
+    participantCount: 0,
+    questionCount: 0
+  },
+  {
+    id: '6',
+    title: 'CWM TEAMDAY',
+    webLink: 'https://velitt.digital/event/cwm-teamday',
+    createdAt: '2024-03-20',
+    participantCount: 0,
+    questionCount: 0
+  }
+];
+
+const mockParticipants: Participant[] = [
+  {
+    id: '1',
+    eventId: '1',
+    firstName: 'Tyler',
+    lastName: 'Singer',
+    email: 'tyler@example.com',
+    phoneNumber: '+1234567890',
+    pointsEarned: 0,
+    joinedAt: '2024-01-16'
+  },
+  {
+    id: '2',
+    eventId: '1',
+    firstName: 'Maelynn',
+    lastName: 'Tjongayong',
+    email: 'maelynn@example.com',
+    phoneNumber: '+1234567891',
+    pointsEarned: 0,
+    joinedAt: '2024-01-17'
+  },
+  {
+    id: '3',
+    eventId: '1',
+    firstName: 'Gior',
+    lastName: 'Bonela',
+    email: 'gior@example.com',
+    phoneNumber: '+1234567892',
+    pointsEarned: 0,
+    joinedAt: '2024-01-18'
+  },
+  {
+    id: '4',
+    eventId: '1',
+    firstName: 'Jada',
+    lastName: 'Pieternelle',
+    email: 'jada@example.com',
+    phoneNumber: '+1234567893',
+    pointsEarned: 0,
+    joinedAt: '2024-01-19'
+  },
+  {
+    id: '5',
+    eventId: '1',
+    firstName: 'Kaysan',
+    lastName: 'Garmers',
+    email: 'kaysan@example.com',
+    phoneNumber: '+1234567894',
+    pointsEarned: 0,
+    joinedAt: '2024-01-20'
+  },
+  {
+    id: '6',
+    eventId: '1',
+    firstName: 't',
+    lastName: 'e',
+    email: 'te@example.com',
+    phoneNumber: '+1234567895',
+    pointsEarned: 0,
+    joinedAt: '2024-01-21'
+  }
+];
+
+const mockQuestions: Question[] = [];
+
 const mockDashboardStats: DashboardStats = {
   totalClients: 245,
   newClients: 18,
@@ -121,6 +246,9 @@ const initialState: AdminState = {
   currentView: 'dashboard',
   clients: mockClients,
   invoices: mockInvoices,
+  scavengerHunts: mockScavengerHunts,
+  participants: mockParticipants,
+  questions: mockQuestions,
   dashboardStats: mockDashboardStats,
   selectedInvoice: null,
   invoiceForm: {
@@ -193,6 +321,50 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const addParticipant = (participant: Omit<Participant, 'id' | 'joinedAt'>) => {
+    const newParticipant: Participant = {
+      ...participant,
+      id: Date.now().toString(),
+      joinedAt: new Date().toISOString()
+    };
+    updateState({ participants: [...state.participants, newParticipant] });
+  };
+
+  const deleteParticipant = (id: string) => {
+    const filteredParticipants = state.participants.filter(participant => participant.id !== id);
+    updateState({ participants: filteredParticipants });
+  };
+
+  const addQuestion = (question: Omit<Question, 'id' | 'createdAt'>) => {
+    const newQuestion: Question = {
+      ...question,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    updateState({ questions: [...state.questions, newQuestion] });
+  };
+
+  const deleteQuestion = (id: string) => {
+    const filteredQuestions = state.questions.filter(question => question.id !== id);
+    updateState({ questions: filteredQuestions });
+  };
+
+  const addScavengerHunt = (hunt: Omit<ScavengerHuntEvent, 'id' | 'createdAt' | 'participantCount' | 'questionCount'>) => {
+    const newHunt: ScavengerHuntEvent = {
+      ...hunt,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      participantCount: 0,
+      questionCount: 0
+    };
+    updateState({ scavengerHunts: [...state.scavengerHunts, newHunt] });
+  };
+
+  const deleteScavengerHunt = (id: string) => {
+    const filteredHunts = state.scavengerHunts.filter(hunt => hunt.id !== id);
+    updateState({ scavengerHunts: filteredHunts });
+  };
+
   return (
     <AdminContext.Provider value={{
       state,
@@ -202,7 +374,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       updateInvoice,
       deleteInvoice,
       addInvoiceItem,
-      removeInvoiceItem
+      removeInvoiceItem,
+      addParticipant,
+      deleteParticipant,
+      addQuestion,
+      deleteQuestion,
+      addScavengerHunt,
+      deleteScavengerHunt
     }}>
       {children}
     </AdminContext.Provider>

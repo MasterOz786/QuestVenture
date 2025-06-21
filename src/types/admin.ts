@@ -1,4 +1,3 @@
-
 export interface Client {
   id: string;
   name: string;
@@ -55,4 +54,37 @@ export interface DashboardStats {
     hunts: number;
     revenue: number;
   }>;
+}
+
+// New types for Scavenger Hunt management
+export interface ScavengerHuntEvent {
+  id: string;
+  title: string;
+  webLink: string;
+  createdAt: string;
+  participantCount: number;
+  questionCount: number;
+}
+
+export interface Participant {
+  id: string;
+  eventId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  pointsEarned: number;
+  joinedAt: string;
+}
+
+export interface Question {
+  id: string;
+  eventId: string;
+  type: 'multiple-choice' | 'question-to-answer' | 'code' | 'url';
+  title: string;
+  content: string;
+  options?: string[];
+  correctAnswer?: string;
+  points: number;
+  createdAt: string;
 }
