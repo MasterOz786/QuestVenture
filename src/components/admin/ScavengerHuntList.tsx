@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Copy, Edit, Trash2 } from 'lucide-react';
+import { ChevronDown, Copy, Edit, Trash2, Users } from 'lucide-react';
 import { useAdminContext } from '../../context/AdminContext';
 
 export default function ScavengerHuntList() {
-  const { state, setCurrentView, deleteScavengerHunt } = useAdminContext();
+  const { state, setCurrentView, deleteScavengerHunt, setSelectedHunt } = useAdminContext();
   const { scavengerHunts } = state;
   const [openActionId, setOpenActionId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +24,13 @@ export default function ScavengerHuntList() {
         break;
       case 'copy-link':
         navigator.clipboard.writeText(scavengerHunts.find(h => h.id === huntId)?.webLink || '');
+        break;
+      case 'view-participants':
+        const selectedHunt = scavengerHunts.find(h => h.id === huntId);
+        if (selectedHunt) {
+          setSelectedHunt(selectedHunt);
+          setCurrentView('participants');
+        }
         break;
     }
     setOpenActionId(null);
@@ -58,7 +65,7 @@ export default function ScavengerHuntList() {
         className="mb-6"
       >
         <button
-          onClick={() => setCurrentView('create-event')}
+          onClick={() => setCurrentView('add-event')}
           className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
         >
           ADD NEW EVENT
@@ -111,6 +118,7 @@ export default function ScavengerHuntList() {
                 <th className="text-left p-4 font-semibold text-gray-900">Action</th>
                 <th className="text-left p-4 font-semibold text-gray-900">Title</th>
                 <th className="text-left p-4 font-semibold text-gray-900">Web Link</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Participants</th>
               </tr>
             </thead>
             <tbody>
@@ -138,9 +146,16 @@ export default function ScavengerHuntList() {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[150px]"
+                            className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[180px]"
                           >
                             <div className="py-2">
+                              <button
+                                onClick={() => handleAction('view-participants', hunt.id)}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
+                              >
+                                <Users className="w-4 h-4" />
+                                View Participants
+                              </button>
                               <button
                                 onClick={() => handleAction('edit', hunt.id)}
                                 className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
@@ -166,7 +181,7 @@ export default function ScavengerHuntList() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-900">{hunt.webLink}</span>
+                      <span className="text-gray-900 text-sm">{hunt.webLink}</span>
                       <button
                         onClick={() => handleAction('copy-link', hunt.id)}
                         className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm transition-colors"
@@ -174,6 +189,9 @@ export default function ScavengerHuntList() {
                         COPY
                       </button>
                     </div>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-gray-900">{hunt.participantCount}</span>
                   </td>
                 </motion.tr>
               ))}

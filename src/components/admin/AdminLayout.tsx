@@ -11,7 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'scavenger-hunts', label: 'Scavenger Hunts', icon: MapPin },
-    { id: 'participants', label: 'Participants', icon: Users },
+    // { id: 'participants', label: 'Participants', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

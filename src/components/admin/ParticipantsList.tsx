@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Edit, Trash2 } from 'lucide-react';
+import { ChevronDown, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { useAdminContext } from '../../context/AdminContext';
 
 export default function ParticipantsList() {
   const { state, setCurrentView, deleteParticipant } = useAdminContext();
-  const { participants } = state;
+  const { participants, selectedHunt } = state;
   const [openActionId, setOpenActionId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
 
-  const filteredParticipants = participants.filter(participant =>
+  // Filter participants by selected hunt
+  const huntParticipants = selectedHunt 
+    ? participants.filter(participant => participant.eventId === selectedHunt.id)
+    : participants;
+
+  const filteredParticipants = huntParticipants.filter(participant =>
     `${participant.firstName} ${participant.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -26,6 +31,10 @@ export default function ParticipantsList() {
     setOpenActionId(null);
   };
 
+  const handleBackToHunts = () => {
+    setCurrentView('scavenger-hunts');
+  };
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -36,7 +45,20 @@ export default function ParticipantsList() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Scavenger Hunt</h1>
+            <div className="flex items-center gap-4 mb-2">
+              {selectedHunt && (
+                <button
+                  onClick={handleBackToHunts}
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  Back to Events
+                </button>
+              )}
+              <h1 className="text-2xl font-bold text-gray-900">
+                {selectedHunt ? `${selectedHunt.title} - Participants` : 'All Participants'}
+              </h1>
+            </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>FINANCIAL MANAGER</span>
               <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
@@ -89,7 +111,9 @@ export default function ParticipantsList() {
       >
         {/* Table Header */}
         <div className="bg-red-500 text-white p-4">
-          <h2 className="text-lg font-semibold">Groups Ian Rossen Birthday</h2>
+          <h2 className="text-lg font-semibold">
+            {selectedHunt ? `Groups ${selectedHunt.title}` : 'All Participants'}
+          </h2>
         </div>
 
         {/* Controls */}
@@ -124,8 +148,11 @@ export default function ParticipantsList() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left p-4 font-semibold text-gray-900">Action</th>
-                <th className="text-left p-4 font-semibold text-gray-900">Title</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Name</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Email</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Phone</th>
                 <th className="text-left p-4 font-semibold text-gray-900">Points Earned</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Joined Date</th>
               </tr>
             </thead>
             <tbody>
@@ -177,16 +204,36 @@ export default function ParticipantsList() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className="text-gray-900">{participant.firstName} {participant.lastName}</span>
+                    <span className="text-gray-900 font-medium">
+                      {participant.firstName} {participant.lastName}
+                    </span>
                   </td>
                   <td className="p-4">
-                    <span className="text-gray-900">{participant.pointsEarned}</span>
+                    <span className="text-gray-600">{participant.email}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-gray-600">{participant.phoneNumber}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-gray-900 font-semibold">{participant.pointsEarned}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-gray-600">
+                      {new Date(participant.joinedAt).toLocaleDateString()}
+                    </span>
                   </td>
                 </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Empty State */}
+        {filteredParticipants.length === 0 && (
+          <div className="p-8 text-center text-gray-500">
+            <p>No participants found for this event.</p>
+          </div>
+        )}
       </motion.div>
     </div>
   );
