@@ -22,6 +22,7 @@ interface AppState {
   timeRemaining: number;
   score: number;
   canvasDrawings: { [key: number]: string };
+  currentLanguage: 'english' | 'spanish' | 'papiamentu' | 'dutch';
 }
 
 interface AppContextType {
@@ -42,12 +43,16 @@ const initialState: AppState = {
   timeRemaining: 600, // 10 minutes in seconds
   score: 0,
   canvasDrawings: {},
+  currentLanguage: 'english',
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(initialState);
 
+  console.log('AppProvider initialized with state:', state);
+
   const updateState = (updates: Partial<AppState>) => {
+    console.log('Updating state with:', updates);
     setState(prev => ({ ...prev, ...updates }));
   };
 
