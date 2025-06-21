@@ -56,7 +56,7 @@ export interface DashboardStats {
   }>;
 }
 
-// New types for Scavenger Hunt management
+// Enhanced types for Scavenger Hunt management
 export interface ScavengerHuntEvent {
   id: string;
   title: string;
@@ -64,6 +64,7 @@ export interface ScavengerHuntEvent {
   createdAt: string;
   participantCount: number;
   questionCount: number;
+  groupNames?: string[];
 }
 
 export interface Participant {
@@ -87,4 +88,6 @@ export interface Question {
   correctAnswer?: string;
   points: number;
   createdAt: string;
+  mediaType?: 'none' | 'image' | 'video';
+  mediaUrl?: string;
 }

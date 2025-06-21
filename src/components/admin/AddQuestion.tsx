@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Plus, X, Upload, Image, Video } from 'lucide-react';
 import { useAdminContext } from '../../context/AdminContext';
 
 export default function AddQuestion() {
@@ -10,9 +10,11 @@ export default function AddQuestion() {
     questionType: 'multiple-choice',
     title: '',
     content: '',
-    options: ['', '', '', ''],
+    options: ['', ''],
     correctAnswer: '',
-    points: 10
+    points: 10,
+    mediaType: 'none' as 'none' | 'image' | 'video',
+    mediaUrl: ''
   });
 
   const questionTypes = [
@@ -26,15 +28,37 @@ export default function AddQuestion() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...formData.options];
+    newOptions[index] = value;
+    setFormData(prev => ({ ...prev, options: newOptions }));
+  };
+
+  const addOption = () => {
+    setFormData(prev => ({
+      ...prev,
+      options: [...prev.options, '']
+    }));
+  };
+
+  const removeOption = (index: number) => {
+    if (formData.options.length > 2) {
+      const newOptions = formData.options.filter((_, i) => i !== index);
+      setFormData(prev => ({ ...prev, options: newOptions }));
+    }
+  };
+
   const handleStartOver = () => {
     setFormData({
       eventTitle: 'Ian Rossen Birthday',
       questionType: 'multiple-choice',
       title: '',
       content: '',
-      options: ['', '', '', ''],
+      options: ['', ''],
       correctAnswer: '',
-      points: 10
+      points: 10,
+      mediaType: 'none',
+      mediaUrl: ''
     });
   };
 
@@ -45,9 +69,11 @@ export default function AddQuestion() {
         type: formData.questionType as any,
         title: formData.title,
         content: formData.content,
-        options: formData.questionType === 'multiple-choice' ? formData.options : undefined,
+        options: formData.questionType === 'multiple-choice' ? formData.options.filter(opt => opt.trim()) : undefined,
         correctAnswer: formData.correctAnswer,
-        points: formData.points
+        points: formData.points,
+        mediaType: formData.mediaType,
+        mediaUrl: formData.mediaUrl || undefined
       });
       setCurrentView('participants');
     }
@@ -121,6 +147,61 @@ export default function AddQuestion() {
             </div>
           </div>
 
+          {/* Media Type Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-4">Add Media (Optional)</label>
+            <div className="flex gap-4 mb-4">
+              <button
+                onClick={() => handleInputChange('mediaType', 'none')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                  formData.mediaType === 'none'
+                    ? 'bg-red-500 text-white border-red-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-red-300'
+                }`}
+              >
+                None
+              </button>
+              <button
+                onClick={() => handleInputChange('mediaType', 'image')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                  formData.mediaType === 'image'
+                    ? 'bg-red-500 text-white border-red-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-red-300'
+                }`}
+              >
+                <Image className="w-4 h-4" />
+                Image
+              </button>
+              <button
+                onClick={() => handleInputChange('mediaType', 'video')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                  formData.mediaType === 'video'
+                    ? 'bg-red-500 text-white border-red-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-red-300'
+                }`}
+              >
+                <Video className="w-4 h-4" />
+                Video
+              </button>
+            </div>
+
+            {/* Media URL Input */}
+            {formData.mediaType !== 'none' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {formData.mediaType === 'image' ? 'Image URL' : 'Video URL'}
+                </label>
+                <input
+                  type="url"
+                  value={formData.mediaUrl}
+                  onChange={(e) => handleInputChange('mediaUrl', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  placeholder={`Enter ${formData.mediaType} URL`}
+                />
+              </div>
+            )}
+          </div>
+
           {/* Question Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Question Title</label>
@@ -151,19 +232,31 @@ export default function AddQuestion() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Answer Options</label>
               <div className="space-y-3">
                 {formData.options.map((option, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...formData.options];
-                      newOptions[index] = e.target.value;
-                      setFormData(prev => ({ ...prev, options: newOptions }));
-                    }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder={`Option ${index + 1}`}
-                  />
+                  <div key={index} className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={option}
+                      onChange={(e) => handleOptionChange(index, e.target.value)}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    {formData.options.length > 2 && (
+                      <button
+                        onClick={() => removeOption(index)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 ))}
+                <button
+                  onClick={addOption}
+                  className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Option
+                </button>
               </div>
             </div>
           )}

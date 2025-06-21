@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Client, Invoice, DashboardStats, InvoiceItem, ScavengerHuntEvent, Participant, Question } from '../types/admin';
 
 interface AdminState {
-  currentView: 'dashboard' | 'invoices' | 'create-invoice' | 'scavenger-hunts' | 'participants' | 'add-participant' | 'add-question' | 'create-event' | 'add-ads';
+  currentView: 'dashboard' | 'invoices' | 'create-invoice' | 'scavenger-hunts' | 'participants' | 'add-participant' | 'add-question' | 'add-event' | 'add-ads';
   clients: Client[];
   invoices: Invoice[];
   scavengerHunts: ScavengerHuntEvent[];
@@ -10,6 +10,7 @@ interface AdminState {
   questions: Question[];
   dashboardStats: DashboardStats;
   selectedInvoice: Invoice | null;
+  selectedHunt: ScavengerHuntEvent | null;
   invoiceForm: Partial<Invoice>;
 }
 
@@ -17,6 +18,7 @@ interface AdminContextType {
   state: AdminState;
   updateState: (updates: Partial<AdminState>) => void;
   setCurrentView: (view: AdminState['currentView']) => void;
+  setSelectedHunt: (hunt: ScavengerHuntEvent | null) => void;
   createInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => void;
   updateInvoice: (id: string, updates: Partial<Invoice>) => void;
   deleteInvoice: (id: string) => void;
@@ -105,7 +107,8 @@ const mockScavengerHunts: ScavengerHuntEvent[] = [
     webLink: 'https://velitt.digital/event/ian-rossen-birthday',
     createdAt: '2024-01-15',
     participantCount: 6,
-    questionCount: 5
+    questionCount: 5,
+    groupNames: ['Team Alpha', 'Team Beta']
   },
   {
     id: '2',
@@ -113,7 +116,8 @@ const mockScavengerHunts: ScavengerHuntEvent[] = [
     webLink: 'https://velitt.digital/event/t',
     createdAt: '2024-02-01',
     participantCount: 0,
-    questionCount: 0
+    questionCount: 0,
+    groupNames: []
   },
   {
     id: '3',
@@ -121,7 +125,8 @@ const mockScavengerHunts: ScavengerHuntEvent[] = [
     webLink: 'https://velitt.digital/event/test-1234',
     createdAt: '2024-02-15',
     participantCount: 0,
-    questionCount: 0
+    questionCount: 0,
+    groupNames: []
   },
   {
     id: '4',
@@ -129,7 +134,8 @@ const mockScavengerHunts: ScavengerHuntEvent[] = [
     webLink: 'https://velitt.digital/event/punda',
     createdAt: '2024-03-01',
     participantCount: 0,
-    questionCount: 0
+    questionCount: 0,
+    groupNames: []
   },
   {
     id: '5',
@@ -137,7 +143,8 @@ const mockScavengerHunts: ScavengerHuntEvent[] = [
     webLink: 'https://velitt.digital/event/marian',
     createdAt: '2024-03-10',
     participantCount: 0,
-    questionCount: 0
+    questionCount: 0,
+    groupNames: []
   },
   {
     id: '6',
@@ -145,7 +152,8 @@ const mockScavengerHunts: ScavengerHuntEvent[] = [
     webLink: 'https://velitt.digital/event/cwm-teamday',
     createdAt: '2024-03-20',
     participantCount: 0,
-    questionCount: 0
+    questionCount: 0,
+    groupNames: []
   }
 ];
 
@@ -251,6 +259,7 @@ const initialState: AdminState = {
   questions: mockQuestions,
   dashboardStats: mockDashboardStats,
   selectedInvoice: null,
+  selectedHunt: null,
   invoiceForm: {
     invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -270,6 +279,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const setCurrentView = (view: AdminState['currentView']) => {
     updateState({ currentView: view });
+  };
+
+  const setSelectedHunt = (hunt: ScavengerHuntEvent | null) => {
+    updateState({ selectedHunt: hunt });
   };
 
   const createInvoice = (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
@@ -370,6 +383,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       state,
       updateState,
       setCurrentView,
+      setSelectedHunt,
       createInvoice,
       updateInvoice,
       deleteInvoice,

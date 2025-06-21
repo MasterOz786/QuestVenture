@@ -8,6 +8,7 @@ import ScavengerHuntList from './ScavengerHuntList';
 import ParticipantsList from './ParticipantsList';
 import AddParticipant from './AddParticipant';
 import AddQuestion from './AddQuestion';
+import AddEvent from './AddEvent';
 
 function AdminContent() {
   const { state } = useAdminContext();
@@ -29,6 +30,8 @@ function AdminContent() {
         return <AddParticipant />;
       case 'add-question':
         return <AddQuestion />;
+      case 'add-event':
+        return <AddEvent />;
       default:
         return <AdminDashboard />;
     }
