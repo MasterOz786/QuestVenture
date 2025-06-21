@@ -14,7 +14,29 @@ import { useAdminContext } from '../../context/AdminContext';
 
 export default function AdminDashboard() {
   const { state } = useAdminContext();
-  const { dashboardStats } = state;
+  const { dashboardStats, invoices, scavengerHunts } = state;
+
+  // Calculate hunt booking analytics
+  const huntBookings = scavengerHunts.map(hunt => {
+    const huntInvoices = invoices.filter(invoice => invoice.huntId === hunt.id);
+    const totalRevenue = huntInvoices.reduce((sum, invoice) => sum + invoice.balanceDue, 0);
+    const paidInvoices = huntInvoices.filter(invoice => invoice.status === 'paid');
+    const pendingInvoices = huntInvoices.filter(invoice => invoice.status === 'pending_approval');
+    
+    return {
+      id: hunt.id,
+      title: hunt.title,
+      totalBookings: huntInvoices.length,
+      paidBookings: paidInvoices.length,
+      pendingBookings: pendingInvoices.length,
+      totalRevenue,
+      avgRevenue: huntInvoices.length > 0 ? totalRevenue / huntInvoices.length : 0
+    };
+  }).sort((a, b) => b.totalBookings - a.totalBookings);
+
+  const topBookedHunts = huntBookings.slice(0, 5);
+  const totalHuntRevenue = huntBookings.reduce((sum, hunt) => sum + hunt.totalRevenue, 0);
+  const totalHuntBookings = huntBookings.reduce((sum, hunt) => sum + hunt.totalBookings, 0);
 
   const StatCard = ({ 
     title, 
@@ -142,6 +164,39 @@ export default function AdminDashboard() {
         </div>
       </motion.div>
 
+      {/* Hunt Booking Analytics */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="mb-8"
+      >
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">Hunt Booking Analytics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Total Bookings"
+            value={totalHuntBookings}
+            icon={Calendar}
+          />
+          <StatCard
+            title="Total Revenue"
+            value={`$${totalHuntRevenue.toLocaleString()}`}
+            icon={DollarSign}
+          />
+          <StatCard
+            title="Avg. Revenue/Hunt"
+            value={`$${totalHuntBookings > 0 ? (totalHuntRevenue / totalHuntBookings).toFixed(0) : 0}`}
+            icon={TrendingUp}
+          />
+          <StatCard
+            title="Most Booked Hunt"
+            value={topBookedHunts.length > 0 ? topBookedHunts[0].title : 'None'}
+            subtitle={`${topBookedHunts.length > 0 ? topBookedHunts[0].totalBookings : 0} bookings`}
+            icon={MapPin}
+          />
+        </div>
+      </motion.div>
+
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Monthly Activity Chart */}
@@ -197,6 +252,60 @@ export default function AdminDashboard() {
           </div>
         </motion.div>
       </div>
+
+      {/* Hunt Bookings Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8"
+      >
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Top Booked Hunts</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="text-left p-4 font-semibold text-gray-900">Hunt Title</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Total Bookings</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Paid</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Pending</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Total Revenue</th>
+                <th className="text-left p-4 font-semibold text-gray-900">Avg. Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topBookedHunts.map((hunt, index) => (
+                <motion.tr
+                  key={hunt.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 + index * 0.1 }}
+                  className="border-b hover:bg-gray-50"
+                >
+                  <td className="p-4">
+                    <span className="font-medium text-gray-900">{hunt.title}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-gray-900">{hunt.totalBookings}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-green-600 font-medium">{hunt.paidBookings}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-yellow-600 font-medium">{hunt.pendingBookings}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-gray-900 font-medium">${hunt.totalRevenue.toLocaleString()}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-gray-600">${hunt.avgRevenue.toFixed(0)}</span>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
     </div>
   );
 }

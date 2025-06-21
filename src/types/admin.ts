@@ -14,7 +14,7 @@ export interface Invoice {
   clientId: string;
   clientName: string;
   clientType: 'member' | 'customer';
-  status: 'paid' | 'unpaid' | 'overdue';
+  status: 'paid' | 'unpaid' | 'overdue' | 'pending_approval';
   dueDate: string;
   invoiceDate: string;
   balanceDue: number;
@@ -23,6 +23,8 @@ export interface Invoice {
   billingAddress: string;
   term: string;
   currency: string;
+  huntId?: string;
+  huntTitle?: string;
 }
 
 export interface InvoiceItem {

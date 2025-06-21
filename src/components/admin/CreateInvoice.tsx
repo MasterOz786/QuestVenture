@@ -6,13 +6,15 @@ import { InvoiceItem } from '../../types/admin';
 
 export default function CreateInvoice() {
   const { state, updateState, setCurrentView, createInvoice, addInvoiceItem, removeInvoiceItem } = useAdminContext();
-  const { invoiceForm, clients } = state;
+  const { invoiceForm, scavengerHunts } = state;
   
   const [newItem, setNewItem] = useState<Omit<InvoiceItem, 'id'>>({
     serviceProduct: '',
     description: '',
     amount: 0
   });
+
+  const [selectedHuntId, setSelectedHuntId] = useState('');
 
   const handleInputChange = (field: string, value: any) => {
     updateState({
@@ -39,15 +41,17 @@ export default function CreateInvoice() {
   };
 
   const handleSubmit = () => {
-    const selectedClient = clients.find(c => c.id === invoiceForm.clientId);
-    if (!selectedClient || !invoiceForm.items?.length) return;
+    if (!selectedHuntId || !invoiceForm.items?.length) return;
+
+    const selectedHunt = scavengerHunts.find(h => h.id === selectedHuntId);
+    if (!selectedHunt) return;
 
     const total = calculateTotal();
     createInvoice({
-      clientId: selectedClient.id,
-      clientName: selectedClient.name,
-      clientType: selectedClient.type,
-      status: 'unpaid',
+      clientId: `hunt-${selectedHuntId}`, // Link to hunt
+      clientName: selectedHunt.title, // Use hunt title as client name
+      clientType: 'customer',
+      status: 'unpaid', // Start as unpaid, then pending_approval when payment received
       dueDate: invoiceForm.dueDate || '',
       invoiceDate: invoiceForm.invoiceDate || '',
       balanceDue: total,
@@ -55,8 +59,19 @@ export default function CreateInvoice() {
       items: invoiceForm.items,
       billingAddress: invoiceForm.billingAddress || '',
       term: invoiceForm.term || '2 weeks',
-      currency: invoiceForm.currency || 'USD'
+      currency: invoiceForm.currency || 'USD',
+      huntId: selectedHuntId, // Track hunt for analytics
+      huntTitle: selectedHunt.title // Hunt title for display
     });
+  };
+
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'XCG': return 'XCG';
+      default: return '$';
+    }
   };
 
   return (
@@ -105,23 +120,23 @@ export default function CreateInvoice() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Customer</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Hunt</label>
               <select
-                value={invoiceForm.clientId || ''}
-                onChange={(e) => handleInputChange('clientId', e.target.value)}
+                value={selectedHuntId}
+                onChange={(e) => setSelectedHuntId(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
-                <option value="">Nothing Selected</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
+                <option value="">Select a Scavenger Hunt</option>
+                {scavengerHunts.map(hunt => (
+                  <option key={hunt.id} value={hunt.id}>{hunt.title}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
               <input
-                type="email"
-                value={invoiceForm.clientId ? clients.find(c => c.id === invoiceForm.clientId)?.email || '' : ''}
+                type="text"
+                value={selectedHuntId ? scavengerHunts.find(h => h.id === selectedHuntId)?.title || '' : ''}
                 disabled
                 className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
               />
@@ -174,12 +189,15 @@ export default function CreateInvoice() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-              <input
-                type="text"
+              <select
                 value={invoiceForm.currency || 'USD'}
                 onChange={(e) => handleInputChange('currency', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              />
+              >
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+                <option value="XCG">XCG</option>
+              </select>
             </div>
           </div>
 
@@ -239,7 +257,7 @@ export default function CreateInvoice() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                   <div className="font-medium">{item.serviceProduct}</div>
                   <div className="text-gray-600">{item.description}</div>
-                  <div className="font-medium">${item.amount}</div>
+                  <div className="font-medium">{getCurrencySymbol(invoiceForm.currency || 'USD')}{item.amount}</div>
                   <button
                     onClick={() => removeInvoiceItem(item.id)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -256,11 +274,11 @@ export default function CreateInvoice() {
                 <div className="w-64">
                   <div className="flex justify-between py-2">
                     <span className="font-medium">Total</span>
-                    <span className="font-bold">${calculateTotal()}</span>
+                    <span className="font-bold">{getCurrencySymbol(invoiceForm.currency || 'USD')}{calculateTotal()}</span>
                   </div>
                   <div className="flex justify-between py-2 border-t">
                     <span className="font-medium">Balance Due</span>
-                    <span className="font-bold">${calculateTotal()}</span>
+                    <span className="font-bold">{getCurrencySymbol(invoiceForm.currency || 'USD')}{calculateTotal()}</span>
                   </div>
                 </div>
               </div>
@@ -277,7 +295,12 @@ export default function CreateInvoice() {
             </button>
             <button
               onClick={handleSubmit}
-              className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              disabled={!selectedHuntId || !invoiceForm.items?.length}
+              className={`px-6 py-3 rounded-lg transition-colors ${
+                selectedHuntId && invoiceForm.items?.length
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
               SEND & MAIL
             </button>

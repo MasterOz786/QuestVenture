@@ -33,6 +33,7 @@ interface AdminContextType {
   deleteScavengerHunt: (id: string) => void;
   addAdvertisement: (ad: Omit<Advertisement, 'id' | 'createdAt'>) => void;
   deleteAdvertisement: (id: string) => void;
+  createCustomerFromInvoice: (invoiceId: string) => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -426,6 +427,47 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     updateState({ advertisements: filteredAds });
   };
 
+  const createCustomerFromInvoice = (invoiceId: string) => {
+    const invoice = state.invoices.find(inv => inv.id === invoiceId);
+    if (!invoice || !invoice.huntId || !invoice.huntTitle) return;
+
+    const hunt = state.scavengerHunts.find(h => h.id === invoice.huntId);
+    if (!hunt) return;
+
+    // Generate unique access code
+    const accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // Create new customer
+    const newCustomer: Client = {
+      id: `customer-${Date.now()}`,
+      name: invoice.clientName,
+      email: `customer-${Date.now()}@questventure.com`, // Placeholder email
+      type: 'customer',
+      createdAt: new Date().toISOString(),
+      totalHunts: 1,
+      totalRevenue: invoice.balanceDue
+    };
+
+    // Update hunt participant count
+    const updatedHunts = state.scavengerHunts.map(h => 
+      h.id === invoice.huntId 
+        ? { ...h, participantCount: h.participantCount + 1 }
+        : h
+    );
+
+    // Add customer to clients list
+    updateState({ 
+      clients: [...state.clients, newCustomer],
+      scavengerHunts: updatedHunts
+    });
+
+    // Here you would typically send email with hunt access details
+    console.log(`Customer created for ${invoice.clientName}`);
+    console.log(`Hunt: ${hunt.title}`);
+    console.log(`Access Code: ${accessCode}`);
+    console.log(`Hunt Link: ${hunt.webLink}`);
+  };
+
   return (
     <AdminContext.Provider value={{
       state,
@@ -444,7 +486,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addScavengerHunt,
       deleteScavengerHunt,
       addAdvertisement,
-      deleteAdvertisement
+      deleteAdvertisement,
+      createCustomerFromInvoice
     }}>
       {children}
     </AdminContext.Provider>
