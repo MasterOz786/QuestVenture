@@ -52,7 +52,7 @@ export default function SignInScreen({ onNext }: SignInScreenProps) {
         <QuestHeader />
 
         <div className="mt-8">
-          <h1 className="text-4xl font-bold text-white text-center mb-4 drop-shadow-lg">Sign In</h1>
+          <h1 className="text-4xl font-bold text-white text-center mb-4 drop-shadow-lg">SignIn</h1>
           <p className="text-white/90 text-center mb-8 drop-shadow-md">
             Enter your email to get started.
           </p>

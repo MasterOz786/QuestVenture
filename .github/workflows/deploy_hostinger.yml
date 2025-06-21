@@ -26,4 +26,5 @@ jobs:
           REPO: self
           BRANCH: deploy
           FOLDER: dist
+          CLEAN: true
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
