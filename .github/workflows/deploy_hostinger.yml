@@ -1,28 +1,29 @@
+name: Quest Venture CI
+
 on:
   push:
-    branches: [main]
-
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    
 jobs:
-  build:
+  deploy-hostinger:
     runs-on: ubuntu-latest
+    name: Build and Push
     steps:
-      - uses: actions/checkout@v3
+      - name: git-checkout
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
+      - name: Install all dependenscies
+        run: npm install
 
-      - run: git config user.name "github-actions"
-      - run: git config user.email "actions@github.com"
+      - name: Build
+        run: npm run build
 
-      - run: npm install
-      - run: npm run build
-
-      - run: |
-          git checkout -B build
-          cp -r dist ..
-          rm -rf *
-          cp -r ../dist/* .
-          git add .
-          git commit -m "Deploy built app"
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }} build --force
+      - name: Push
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: self
+          BRANCH: deploy
+          FOLDER: dist
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
