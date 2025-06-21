@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-<<<<<<< HEAD
-import { RotateCcw, Plus, X, Upload, Image, Video } from 'lucide-react';
-=======
 import { RotateCcw, Plus, X, Upload, Image, Video, Globe } from 'lucide-react';
->>>>>>> scav
 import { useAdminContext } from '../../context/AdminContext';
-import { translateText, getAvailableLanguages } from '../../services/translationService';
+import { translateText, getAvailableLanguages, isTranslationAvailable } from '../../services/translationService';
 
 export default function AddQuestion() {
   const { state, setCurrentView, addQuestion } = useAdminContext();
@@ -19,13 +15,9 @@ export default function AddQuestion() {
     correctAnswer: '',
     points: 10,
     mediaType: 'none' as 'none' | 'image' | 'video',
-<<<<<<< HEAD
-    mediaUrl: ''
-=======
     mediaUrl: '',
     location: '',
     sequence: 1
->>>>>>> scav
   });
   const [isTranslating, setIsTranslating] = useState(false);
   const [translations, setTranslations] = useState<any>({});
@@ -64,9 +56,12 @@ export default function AddQuestion() {
     }
   };
 
-<<<<<<< HEAD
-=======
   const handleTranslate = async () => {
+    if (!isTranslationAvailable()) {
+      alert('Translation service is not available. Please check your Gemini API key.');
+      return;
+    }
+
     setIsTranslating(true);
     try {
       const titleTranslations = await translateText(formData.title);
@@ -75,8 +70,9 @@ export default function AddQuestion() {
       
       let optionTranslations: any[] = [];
       if (formData.questionType === 'multiple-choice') {
+        const validOptions = formData.options.filter(opt => opt.trim());
         optionTranslations = await Promise.all(
-          formData.options.filter(opt => opt.trim()).map(option => translateText(option))
+          validOptions.map(option => translateText(option))
         );
       }
 
@@ -88,12 +84,12 @@ export default function AddQuestion() {
       });
     } catch (error) {
       console.error('Translation failed:', error);
+      alert('Translation failed. Please try again or check your internet connection.');
     } finally {
       setIsTranslating(false);
     }
   };
 
->>>>>>> scav
   const handleStartOver = () => {
     setFormData({
       eventTitle: 'Ian Rossen Birthday',
@@ -104,13 +100,9 @@ export default function AddQuestion() {
       correctAnswer: '',
       points: 10,
       mediaType: 'none',
-<<<<<<< HEAD
-      mediaUrl: ''
-=======
       mediaUrl: '',
       location: '',
       sequence: 1
->>>>>>> scav
     });
     setTranslations({});
   };
@@ -120,15 +112,6 @@ export default function AddQuestion() {
       addQuestion({
         eventId: '1',
         type: formData.questionType as any,
-<<<<<<< HEAD
-        title: formData.title,
-        content: formData.content,
-        options: formData.questionType === 'multiple-choice' ? formData.options.filter(opt => opt.trim()) : undefined,
-        correctAnswer: formData.correctAnswer,
-        points: formData.points,
-        mediaType: formData.mediaType,
-        mediaUrl: formData.mediaUrl || undefined
-=======
         title: translations.title || {
           english: formData.title,
           spanish: formData.title,
@@ -160,7 +143,6 @@ export default function AddQuestion() {
         mediaUrl: formData.mediaUrl || undefined,
         location: formData.location,
         sequence: formData.sequence
->>>>>>> scav
       });
       setCurrentView('participants');
     }
@@ -234,8 +216,6 @@ export default function AddQuestion() {
             </div>
           </div>
 
-<<<<<<< HEAD
-=======
           {/* Sequence */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Sequence</label>
@@ -260,7 +240,6 @@ export default function AddQuestion() {
             />
           </div>
 
->>>>>>> scav
           {/* Media Type Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-4">Add Media (Optional)</label>
@@ -405,9 +384,9 @@ export default function AddQuestion() {
               <h3 className="text-lg font-semibold text-gray-900">Multi-language Support</h3>
               <button
                 onClick={handleTranslate}
-                disabled={isTranslating || !formData.title}
+                disabled={isTranslating || !formData.title || !isTranslationAvailable()}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  isTranslating || !formData.title
+                  isTranslating || !formData.title || !isTranslationAvailable()
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-500 text-white hover:bg-blue-600'
                 }`}
@@ -416,6 +395,14 @@ export default function AddQuestion() {
                 {isTranslating ? 'Translating...' : 'Auto-Translate'}
               </button>
             </div>
+
+            {!isTranslationAvailable() && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-yellow-800 text-sm">
+                  Translation service is not available. Please check your Gemini API key in the .env file.
+                </p>
+              </div>
+            )}
 
             {Object.keys(translations).length > 0 && (
               <div className="space-y-4">

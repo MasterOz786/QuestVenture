@@ -56,10 +56,6 @@ export interface DashboardStats {
   }>;
 }
 
-<<<<<<< HEAD
-// Enhanced types for Scavenger Hunt management
-=======
->>>>>>> scav
 export interface ScavengerHuntEvent {
   id: string;
   title: string;
@@ -100,9 +96,6 @@ export interface Question {
   createdAt: string;
   mediaType?: 'none' | 'image' | 'video';
   mediaUrl?: string;
-<<<<<<< HEAD
-}
-=======
   sequence: number;
   location?: string;
 }
@@ -119,4 +112,3 @@ export interface Advertisement {
   createdAt: string;
   isActive: boolean;
 }
->>>>>>> scav

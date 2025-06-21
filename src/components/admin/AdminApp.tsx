@@ -9,10 +9,7 @@ import ParticipantsList from './ParticipantsList';
 import AddParticipant from './AddParticipant';
 import AddQuestion from './AddQuestion';
 import AddEvent from './AddEvent';
-<<<<<<< HEAD
-=======
 import AddAds from './AddAds';
->>>>>>> scav
 
 function AdminContent() {
   const { state } = useAdminContext();
@@ -36,11 +33,8 @@ function AdminContent() {
         return <AddQuestion />;
       case 'add-event':
         return <AddEvent />;
-<<<<<<< HEAD
-=======
       case 'add-ads':
         return <AddAds />;
->>>>>>> scav
       default:
         return <AdminDashboard />;
     }

@@ -10,7 +10,7 @@ import { AppProvider } from './context/AppContext';
 export type Screen = 'signin' | 'location' | 'quiz' | 'leaderboard' | 'admin';
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('quiz');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('signin');
 
   // Check if we should show admin panel
   const showAdmin = window.location.pathname === '/admin' || currentScreen === 'admin';

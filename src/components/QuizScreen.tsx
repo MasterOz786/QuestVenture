@@ -115,40 +115,22 @@ export default function QuizScreen({ onBack, onComplete }: QuizScreenProps) {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string>('');
 
-  const currentQuestion = questions[state.currentQuestionIndex];
-  const isLastQuestion = state.currentQuestionIndex === questions.length - 1;
+  // Ensure currentQuestionIndex is within bounds
+  const safeQuestionIndex = Math.min(state.currentQuestionIndex, questions.length - 1);
+  const currentQuestion = questions[safeQuestionIndex];
+  const isLastQuestion = safeQuestionIndex === questions.length - 1;
   const languages = getAvailableLanguages();
 
   console.log('Current question:', currentQuestion);
-  console.log('Current question index:', state.currentQuestionIndex);
+  console.log('Current question index:', safeQuestionIndex);
   console.log('Questions array length:', questions.length);
 
   // Check for advertisements before current question
   const currentAd = advertisements.find(ad => 
-    ad.questionNumber === state.currentQuestionIndex + 1 && 
+    ad.questionNumber === safeQuestionIndex + 1 && 
     ad.placement === 'before-question' && 
     ad.isActive
   );
-
-  // Add fallback for when currentQuestion is undefined
-  if (!currentQuestion) {
-    console.error('Current question is undefined!');
-    return (
-      <div className="min-h-screen p-6 flex flex-col justify-center max-w-md mx-auto">
-        <QuestHeader />
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-600 mb-4">Question not found. Please try again.</p>
-          <button
-            onClick={onBack}
-            className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Timer countdown
   useEffect(() => {
@@ -193,13 +175,13 @@ export default function QuizScreen({ onBack, onComplete }: QuizScreenProps) {
     }
 
     const newAnswers = [...state.answers];
-    newAnswers[state.currentQuestionIndex] = answer;
+    newAnswers[safeQuestionIndex] = answer;
     updateState({ answers: newAnswers });
 
     if (isLastQuestion) {
       onComplete();
     } else {
-      updateState({ currentQuestionIndex: state.currentQuestionIndex + 1 });
+      updateState({ currentQuestionIndex: safeQuestionIndex + 1 });
       setSelectedAnswer('');
       setTextAnswer('');
       setCanvasDrawing('');
@@ -224,40 +206,204 @@ export default function QuizScreen({ onBack, onComplete }: QuizScreenProps) {
     return textObj[currentLanguage] || textObj.english;
   };
 
-  // Simplified test version
   return (
-    <div className="min-h-screen p-6 flex flex-col justify-center max-w-md mx-auto">
+    <motion.div
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen p-6 flex flex-col max-w-md mx-auto"
+    >
       <QuestHeader />
-      
-      <div className="text-center mt-8">
-        <h1 className="text-2xl font-bold text-black mb-4">
-          Quiz Screen Test
-        </h1>
-        <p className="text-gray-600 mb-4">
-          Current Question: {currentQuestion.id}
-        </p>
-        <p className="text-gray-600 mb-4">
-          Question Type: {currentQuestion.type}
-        </p>
-        <p className="text-gray-600 mb-8">
-          Question: {getQuestionText(currentQuestion.question)}
-        </p>
-        
-        <div className="flex gap-4 justify-center">
+
+      {/* Timer and Progress */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex items-center justify-between mt-6 mb-4"
+      >
+        <div className="flex items-center gap-2 text-white">
+          <Clock className="w-5 h-5" />
+          <span className="font-mono text-lg">{formatTime(state.timeRemaining)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowLanguageSelector(!showLanguageSelector)}
+            className="p-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-colors"
+          >
+            <Globe className="w-5 h-5" />
+          </button>
           <button
             onClick={onBack}
-            className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+            className="p-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-colors"
           >
-            Back
-          </button>
-          <button
-            onClick={handleNext}
-            className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
-          >
-            {isLastQuestion ? 'Finish' : 'Next'}
+            <ArrowLeft className="w-5 h-5" />
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+
+      {/* Language Selector */}
+      <AnimatePresence>
+        {showLanguageSelector && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-white/90 backdrop-blur-sm rounded-xl p-4 mb-4"
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setCurrentLanguage(lang.code as any);
+                    setShowLanguageSelector(false);
+                  }}
+                  className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
+                    currentLanguage === lang.code
+                      ? 'bg-red-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <span>{lang.flag}</span>
+                  <span className="text-sm">{lang.name}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress Bar */}
+      <motion.div
+        initial={{ opacity: 0, scaleX: 0 }}
+        animate={{ opacity: 1, scaleX: 1 }}
+        transition={{ delay: 0.3 }}
+        className="w-full bg-white/20 rounded-full h-2 mb-6"
+      >
+        <div
+          className="bg-gradient-to-r from-red-500 to-orange-500 h-2 rounded-full transition-all duration-500"
+          style={{ width: `${((safeQuestionIndex + 1) / questions.length) * 100}%` }}
+        />
+      </motion.div>
+
+      {/* Advertisement */}
+      {currentAd && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl p-4 mb-6 text-black"
+        >
+          <h3 className="font-bold text-lg mb-2">{currentAd.statement}</h3>
+          <p>{currentAd.content}</p>
+        </motion.div>
+      )}
+
+      {/* Question Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 mb-6 flex-1"
+      >
+        {/* Question Number */}
+        <div className="text-center mb-4">
+          <span className="text-red-500 font-bold text-lg">
+            Question {safeQuestionIndex + 1} of {questions.length}
+          </span>
+        </div>
+
+        {/* Question Image */}
+        {currentQuestion.image && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5 }}
+            className="rounded-xl overflow-hidden mb-6"
+          >
+            <img
+              src={currentQuestion.image}
+              alt="Question"
+              className="w-full h-48 object-cover"
+            />
+          </motion.div>
+        )}
+
+        {/* Question Text */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="text-xl font-bold text-gray-900 mb-6 text-center"
+        >
+          {getQuestionText(currentQuestion.question)}
+        </motion.h2>
+
+        {/* Answer Options */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
+            <div className="space-y-3">
+              {currentQuestion.options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedAnswer(getQuestionText(option))}
+                  className={`w-full p-4 rounded-xl text-left transition-all duration-300 ${
+                    selectedAnswer === getQuestionText(option)
+                      ? 'bg-red-500 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                  }`}
+                >
+                  {getQuestionText(option)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {currentQuestion.type === 'text-input' && (
+            <div>
+              <textarea
+                value={textAnswer}
+                onChange={(e) => setTextAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                className="w-full p-4 border-2 border-gray-300 rounded-xl focus:border-red-500 focus:outline-none resize-none"
+                rows={4}
+              />
+            </div>
+          )}
+
+          {currentQuestion.type === 'canvas' && (
+            <div>
+              <CanvasDrawing
+                onDrawingChange={setCanvasDrawing}
+                initialDrawing={canvasDrawing}
+              />
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+
+      {/* Next Button */}
+      <motion.button
+        onClick={handleNext}
+        disabled={!isAnswerSelected()}
+        whileHover={{ scale: isAnswerSelected() ? 1.02 : 1 }}
+        whileTap={{ scale: isAnswerSelected() ? 0.98 : 1 }}
+        className={`w-full py-4 rounded-xl font-bold text-xl transition-all duration-300 ${
+          isAnswerSelected()
+            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+      >
+        {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
+      </motion.button>
+    </motion.div>
   );
 }
