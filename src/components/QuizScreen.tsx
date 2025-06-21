@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Clock, ArrowLeft } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Clock, ArrowLeft, Globe, Upload, Image } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import QuestHeader from './QuestHeader';
+import CanvasDrawing from './CanvasDrawing';
+import { getAvailableLanguages } from '../services/translationService';
 
 interface QuizScreenProps {
   onBack: () => void;
@@ -13,35 +15,140 @@ const questions = [
   {
     id: 1,
     type: 'multiple-choice' as const,
-    question: 'What is the capital of France?',
+    question: {
+      english: 'What is the capital of France?',
+      spanish: '¿Cuál es la capital de Francia?',
+      papiamentu: 'Kua ta kapital di Fransia?',
+      dutch: 'Wat is de hoofdstad van Frankrijk?'
+    },
     image: 'https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg?auto=compress&cs=tinysrgb&w=600',
-    options: ['Paris', 'London', 'Berlin', 'Madrid'],
-    correctAnswer: 'Paris'
+    options: [
+      {
+        english: 'Paris',
+        spanish: 'París',
+        papiamentu: 'Paris',
+        dutch: 'Parijs'
+      },
+      {
+        english: 'London',
+        spanish: 'Londres',
+        papiamentu: 'London',
+        dutch: 'Londen'
+      },
+      {
+        english: 'Berlin',
+        spanish: 'Berlín',
+        papiamentu: 'Berlin',
+        dutch: 'Berlijn'
+      },
+      {
+        english: 'Madrid',
+        spanish: 'Madrid',
+        papiamentu: 'Madrid',
+        dutch: 'Madrid'
+      }
+    ],
+    correctAnswer: {
+      english: 'Paris',
+      spanish: 'París',
+      papiamentu: 'Paris',
+      dutch: 'Parijs'
+    }
   },
   {
     id: 2,
     type: 'text-input' as const,
-    question: 'What is the old name of New York City?',
+    question: {
+      english: 'What is the old name of New York City?',
+      spanish: '¿Cuál es el nombre antiguo de la ciudad de Nueva York?',
+      papiamentu: 'Kua tabata e nòmber bieu di New York City?',
+      dutch: 'Wat is de oude naam van New York City?'
+    },
     image: 'https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg?auto=compress&cs=tinysrgb&w=600',
-    correctAnswer: 'New Amsterdam'
+    correctAnswer: {
+      english: 'New Amsterdam',
+      spanish: 'Nueva Ámsterdam',
+      papiamentu: 'New Amsterdam',
+      dutch: 'Nieuw Amsterdam'
+    }
   },
   {
     id: 3,
-    type: 'multiple-choice' as const,
-    question: 'Which planet is known as the Red Planet?',
+    type: 'canvas' as const,
+    question: {
+      english: 'Draw a simple house',
+      spanish: 'Dibuja una casa simple',
+      papiamentu: 'Teka un kas simpel',
+      dutch: 'Teken een eenvoudig huis'
+    },
     image: 'https://images.pexels.com/photos/73871/rocket-launch-rocket-take-off-nasa-73871.jpeg?auto=compress&cs=tinysrgb&w=600',
-    options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
-    correctAnswer: 'Mars'
+    correctAnswer: {
+      english: 'Drawing completed',
+      spanish: 'Dibujo completado',
+      papiamentu: 'Teka kaba',
+      dutch: 'Tekening voltooid'
+    }
+  }
+];
+
+// Mock advertisements
+const advertisements = [
+  {
+    id: '1',
+    statement: 'Special Offer!',
+    content: 'Get 50% off on your next adventure booking!',
+    adType: 'banner' as const,
+    placement: 'before-question' as const,
+    questionNumber: 2,
+    isActive: true
   }
 ];
 
 export default function QuizScreen({ onBack, onComplete }: QuizScreenProps) {
+  console.log('QuizScreen rendered');
+  
   const { state, updateState } = useAppContext();
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [textAnswer, setTextAnswer] = useState<string>('');
+  const [canvasDrawing, setCanvasDrawing] = useState<string>('');
+  const [currentLanguage, setCurrentLanguage] = useState<'english' | 'spanish' | 'papiamentu' | 'dutch'>('english');
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string>('');
 
   const currentQuestion = questions[state.currentQuestionIndex];
   const isLastQuestion = state.currentQuestionIndex === questions.length - 1;
+  const languages = getAvailableLanguages();
+
+  console.log('Current question:', currentQuestion);
+  console.log('Current question index:', state.currentQuestionIndex);
+  console.log('Questions array length:', questions.length);
+
+  // Check for advertisements before current question
+  const currentAd = advertisements.find(ad => 
+    ad.questionNumber === state.currentQuestionIndex + 1 && 
+    ad.placement === 'before-question' && 
+    ad.isActive
+  );
+
+  // Add fallback for when currentQuestion is undefined
+  if (!currentQuestion) {
+    console.error('Current question is undefined!');
+    return (
+      <div className="min-h-screen p-6 flex flex-col justify-center max-w-md mx-auto">
+        <QuestHeader />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+          <p className="text-gray-600 mb-4">Question not found. Please try again.</p>
+          <button
+            onClick={onBack}
+            className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Timer countdown
   useEffect(() => {
@@ -59,96 +166,98 @@ export default function QuizScreen({ onBack, onComplete }: QuizScreenProps) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleNext = () => {
-    const answer = currentQuestion.type === 'multiple-choice' ? selectedAnswer : textAnswer;
+    let answer = '';
+    
+    switch (currentQuestion.type) {
+      case 'multiple-choice':
+        answer = selectedAnswer;
+        break;
+      case 'text-input':
+        answer = textAnswer;
+        break;
+      case 'canvas':
+        answer = canvasDrawing;
+        break;
+    }
+
     const newAnswers = [...state.answers];
     newAnswers[state.currentQuestionIndex] = answer;
     updateState({ answers: newAnswers });
 
     if (isLastQuestion) {
-      // Quiz completed - navigate to leaderboard
       onComplete();
     } else {
       updateState({ currentQuestionIndex: state.currentQuestionIndex + 1 });
       setSelectedAnswer('');
       setTextAnswer('');
+      setCanvasDrawing('');
+      setUploadedImage('');
     }
   };
 
-  const isAnswerSelected = currentQuestion.type === 'multiple-choice' ? selectedAnswer !== '' : textAnswer.trim() !== '';
+  const isAnswerSelected = () => {
+    switch (currentQuestion.type) {
+      case 'multiple-choice':
+        return selectedAnswer !== '';
+      case 'text-input':
+        return textAnswer.trim() !== '';
+      case 'canvas':
+        return canvasDrawing !== '';
+      default:
+        return false;
+    }
+  };
 
+  const getQuestionText = (textObj: any) => {
+    return textObj[currentLanguage] || textObj.english;
+  };
+
+  // Simplified test version
   return (
     <div className="min-h-screen p-6 flex flex-col justify-center max-w-md mx-auto">
       <QuestHeader />
-
-      {/* Timer */}
-      <div className="flex items-center justify-center gap-2 mt-6 mb-8">
-        <Clock className="w-6 h-6 text-white" />
-        <span className="text-3xl font-bold text-white">
-          {formatTime(state.timeRemaining)}
-        </span>
-      </div>
-
-      <AnimatePresence mode="wait">
-        <div key={currentQuestion.id} className="flex-1">
-          {/* Question Image */}
-          <div className="relative rounded-2xl overflow-hidden mb-6 h-48">
-            <img
-              src={currentQuestion.image}
-              alt="Question"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-          </div>
-
-          {/* Question */}
-          <h1 className="text-2xl font-bold text-black text-center mb-8">
-            Q{currentQuestion.id}. {currentQuestion.question}
-          </h1>
-
-          {/* Answer Options */}
-          {currentQuestion.type === 'multiple-choice' ? (
-            <div className="grid grid-cols-2 gap-3 mb-8">
-              {currentQuestion.options?.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setSelectedAnswer(option)}
-                  className={`p-4 rounded-xl border-2 font-semibold transition-all duration-300 ${
-                    selectedAnswer === option
-                      ? 'bg-gradient-to-r from-red-400 to-blue-400 text-white border-transparent shadow-lg'
-                      : 'bg-white/20 backdrop-blur-sm text-gray-800 border-red-300 hover:border-red-400'
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="mb-8">
-              <input
-                type="text"
-                placeholder="Type your answer here..."
-                value={textAnswer}
-                onChange={(e) => setTextAnswer(e.target.value)}
-                className="w-full p-4 rounded-xl border-2 border-red-300 bg-white/30 backdrop-blur-sm placeholder-gray-600 text-gray-800 focus:border-blue-400 focus:outline-none transition-colors duration-300"
-              />
-            </div>
-          )}
-
-          {/* Next Button */}
+      
+      <div className="text-center mt-8">
+        <h1 className="text-2xl font-bold text-black mb-4">
+          Quiz Screen Test
+        </h1>
+        <p className="text-gray-600 mb-4">
+          Current Question: {currentQuestion.id}
+        </p>
+        <p className="text-gray-600 mb-4">
+          Question Type: {currentQuestion.type}
+        </p>
+        <p className="text-gray-600 mb-8">
+          Question: {getQuestionText(currentQuestion.question)}
+        </p>
+        
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={onBack}
+            className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            Back
+          </button>
           <button
             onClick={handleNext}
-            disabled={!isAnswerSelected}
-            className={`w-full py-4 rounded-xl font-bold text-xl transition-all duration-300 ${
-              isAnswerSelected
-                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:scale-105'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+            className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
           >
-            {isLastQuestion ? 'Finish Quiz' : 'Next'}
+            {isLastQuestion ? 'Finish' : 'Next'}
           </button>
         </div>
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

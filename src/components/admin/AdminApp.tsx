@@ -9,6 +9,7 @@ import ParticipantsList from './ParticipantsList';
 import AddParticipant from './AddParticipant';
 import AddQuestion from './AddQuestion';
 import AddEvent from './AddEvent';
+import AddAds from './AddAds';
 
 function AdminContent() {
   const { state } = useAdminContext();
@@ -32,6 +33,8 @@ function AdminContent() {
         return <AddQuestion />;
       case 'add-event':
         return <AddEvent />;
+      case 'add-ads':
+        return <AddAds />;
       default:
         return <AdminDashboard />;
     }

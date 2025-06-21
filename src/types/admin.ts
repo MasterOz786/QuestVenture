@@ -56,7 +56,6 @@ export interface DashboardStats {
   }>;
 }
 
-// Enhanced types for Scavenger Hunt management
 export interface ScavengerHuntEvent {
   id: string;
   title: string;
@@ -78,16 +77,38 @@ export interface Participant {
   joinedAt: string;
 }
 
+export interface Translation {
+  english: string;
+  spanish: string;
+  papiamentu: string;
+  dutch: string;
+}
+
 export interface Question {
   id: string;
   eventId: string;
-  type: 'multiple-choice' | 'question-to-answer' | 'code' | 'url';
-  title: string;
-  content: string;
-  options?: string[];
-  correctAnswer?: string;
+  type: 'multiple-choice' | 'question-to-answer' | 'code' | 'url' | 'canvas';
+  title: Translation;
+  content: Translation;
+  options?: Translation[];
+  correctAnswer?: Translation;
   points: number;
   createdAt: string;
   mediaType?: 'none' | 'image' | 'video';
   mediaUrl?: string;
+  sequence: number;
+  location?: string;
+}
+
+export interface Advertisement {
+  id: string;
+  eventId: string;
+  statement: string;
+  adType: 'banner' | 'video' | 'image' | 'text';
+  content: string;
+  mediaUrl?: string;
+  placement: 'before-question' | 'after-question' | 'between-questions';
+  questionNumber?: number;
+  createdAt: string;
+  isActive: boolean;
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Client, Invoice, DashboardStats, InvoiceItem, ScavengerHuntEvent, Participant, Question } from '../types/admin';
+import { Client, Invoice, DashboardStats, InvoiceItem, ScavengerHuntEvent, Participant, Question, Advertisement } from '../types/admin';
 
 interface AdminState {
   currentView: 'dashboard' | 'invoices' | 'create-invoice' | 'scavenger-hunts' | 'participants' | 'add-participant' | 'add-question' | 'add-event' | 'add-ads';
@@ -8,6 +8,7 @@ interface AdminState {
   scavengerHunts: ScavengerHuntEvent[];
   participants: Participant[];
   questions: Question[];
+  advertisements: Advertisement[];
   dashboardStats: DashboardStats;
   selectedInvoice: Invoice | null;
   selectedHunt: ScavengerHuntEvent | null;
@@ -30,6 +31,8 @@ interface AdminContextType {
   deleteQuestion: (id: string) => void;
   addScavengerHunt: (hunt: Omit<ScavengerHuntEvent, 'id' | 'createdAt' | 'participantCount' | 'questionCount'>) => void;
   deleteScavengerHunt: (id: string) => void;
+  addAdvertisement: (ad: Omit<Advertisement, 'id' | 'createdAt'>) => void;
+  deleteAdvertisement: (id: string) => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -220,7 +223,37 @@ const mockParticipants: Participant[] = [
   }
 ];
 
-const mockQuestions: Question[] = [];
+const mockQuestions: Question[] = [
+  {
+    id: '1',
+    eventId: '1',
+    type: 'multiple-choice',
+    title: {
+      english: 'Bo ta kla?',
+      spanish: '¿Estás listo?',
+      papiamentu: 'Bo ta kla?',
+      dutch: 'Zijn jullie er klaar voor?'
+    },
+    content: {
+      english: 'Are you ready?',
+      spanish: '¿Estás listo?',
+      papiamentu: 'Bo ta kla?',
+      dutch: 'Zijn jullie er klaar voor?'
+    },
+    correctAnswer: {
+      english: 'Yes',
+      spanish: 'Sí',
+      papiamentu: 'Si',
+      dutch: 'Ja'
+    },
+    points: 1,
+    createdAt: '2024-01-15',
+    sequence: 1,
+    location: 'https://maps.app.goo.gl/VaV2SBxggv2RMZnL8'
+  }
+];
+
+const mockAdvertisements: Advertisement[] = [];
 
 const mockDashboardStats: DashboardStats = {
   totalClients: 245,
@@ -257,6 +290,7 @@ const initialState: AdminState = {
   scavengerHunts: mockScavengerHunts,
   participants: mockParticipants,
   questions: mockQuestions,
+  advertisements: mockAdvertisements,
   dashboardStats: mockDashboardStats,
   selectedInvoice: null,
   selectedHunt: null,
@@ -378,6 +412,20 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     updateState({ scavengerHunts: filteredHunts });
   };
 
+  const addAdvertisement = (ad: Omit<Advertisement, 'id' | 'createdAt'>) => {
+    const newAd: Advertisement = {
+      ...ad,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    updateState({ advertisements: [...state.advertisements, newAd] });
+  };
+
+  const deleteAdvertisement = (id: string) => {
+    const filteredAds = state.advertisements.filter(ad => ad.id !== id);
+    updateState({ advertisements: filteredAds });
+  };
+
   return (
     <AdminContext.Provider value={{
       state,
@@ -394,7 +442,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addQuestion,
       deleteQuestion,
       addScavengerHunt,
-      deleteScavengerHunt
+      deleteScavengerHunt,
+      addAdvertisement,
+      deleteAdvertisement
     }}>
       {children}
     </AdminContext.Provider>

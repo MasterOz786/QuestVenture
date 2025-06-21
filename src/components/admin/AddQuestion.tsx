@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw, Plus, X, Upload, Image, Video } from 'lucide-react';
+import { RotateCcw, Plus, X, Upload, Image, Video, Globe } from 'lucide-react';
 import { useAdminContext } from '../../context/AdminContext';
+import { translateText, getAvailableLanguages } from '../../services/translationService';
 
 export default function AddQuestion() {
   const { state, setCurrentView, addQuestion } = useAdminContext();
@@ -14,15 +15,22 @@ export default function AddQuestion() {
     correctAnswer: '',
     points: 10,
     mediaType: 'none' as 'none' | 'image' | 'video',
-    mediaUrl: ''
+    mediaUrl: '',
+    location: '',
+    sequence: 1
   });
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translations, setTranslations] = useState<any>({});
 
   const questionTypes = [
     { value: 'multiple-choice', label: 'Multiple Choice' },
     { value: 'question-to-answer', label: 'Question to answer' },
     { value: 'code', label: 'Code' },
-    { value: 'url', label: 'URL' }
+    { value: 'url', label: 'URL' },
+    { value: 'canvas', label: 'Canvas Drawing' }
   ];
+
+  const languages = getAvailableLanguages();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -48,6 +56,33 @@ export default function AddQuestion() {
     }
   };
 
+  const handleTranslate = async () => {
+    setIsTranslating(true);
+    try {
+      const titleTranslations = await translateText(formData.title);
+      const contentTranslations = await translateText(formData.content);
+      const correctAnswerTranslations = await translateText(formData.correctAnswer);
+      
+      let optionTranslations: any[] = [];
+      if (formData.questionType === 'multiple-choice') {
+        optionTranslations = await Promise.all(
+          formData.options.filter(opt => opt.trim()).map(option => translateText(option))
+        );
+      }
+
+      setTranslations({
+        title: titleTranslations,
+        content: contentTranslations,
+        correctAnswer: correctAnswerTranslations,
+        options: optionTranslations
+      });
+    } catch (error) {
+      console.error('Translation failed:', error);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleStartOver = () => {
     setFormData({
       eventTitle: 'Ian Rossen Birthday',
@@ -58,22 +93,49 @@ export default function AddQuestion() {
       correctAnswer: '',
       points: 10,
       mediaType: 'none',
-      mediaUrl: ''
+      mediaUrl: '',
+      location: '',
+      sequence: 1
     });
+    setTranslations({});
   };
 
   const handleNext = () => {
     if (formData.questionType && formData.title) {
       addQuestion({
-        eventId: '1', // Default event ID
+        eventId: '1',
         type: formData.questionType as any,
-        title: formData.title,
-        content: formData.content,
-        options: formData.questionType === 'multiple-choice' ? formData.options.filter(opt => opt.trim()) : undefined,
-        correctAnswer: formData.correctAnswer,
+        title: translations.title || {
+          english: formData.title,
+          spanish: formData.title,
+          papiamentu: formData.title,
+          dutch: formData.title
+        },
+        content: translations.content || {
+          english: formData.content,
+          spanish: formData.content,
+          papiamentu: formData.content,
+          dutch: formData.content
+        },
+        options: formData.questionType === 'multiple-choice' 
+          ? (translations.options?.length ? translations.options : formData.options.filter(opt => opt.trim()).map(opt => ({
+              english: opt,
+              spanish: opt,
+              papiamentu: opt,
+              dutch: opt
+            })))
+          : undefined,
+        correctAnswer: translations.correctAnswer || {
+          english: formData.correctAnswer,
+          spanish: formData.correctAnswer,
+          papiamentu: formData.correctAnswer,
+          dutch: formData.correctAnswer
+        },
         points: formData.points,
         mediaType: formData.mediaType,
-        mediaUrl: formData.mediaUrl || undefined
+        mediaUrl: formData.mediaUrl || undefined,
+        location: formData.location,
+        sequence: formData.sequence
       });
       setCurrentView('participants');
     }
@@ -145,6 +207,30 @@ export default function AddQuestion() {
                 </label>
               ))}
             </div>
+          </div>
+
+          {/* Sequence */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sequence</label>
+            <input
+              type="number"
+              value={formData.sequence}
+              onChange={(e) => handleInputChange('sequence', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              min="1"
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Location (Google Maps URL)</label>
+            <input
+              type="url"
+              value={formData.location}
+              onChange={(e) => handleInputChange('location', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              placeholder="https://maps.app.goo.gl/..."
+            />
           </div>
 
           {/* Media Type Selection */}
@@ -283,6 +369,53 @@ export default function AddQuestion() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               min="1"
             />
+          </div>
+
+          {/* Translation Section */}
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Multi-language Support</h3>
+              <button
+                onClick={handleTranslate}
+                disabled={isTranslating || !formData.title}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isTranslating || !formData.title
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                {isTranslating ? 'Translating...' : 'Auto-Translate'}
+              </button>
+            </div>
+
+            {Object.keys(translations).length > 0 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {languages.map((lang) => (
+                    <div key={lang.code} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span>{lang.flag}</span>
+                        <span className="font-medium text-sm">{lang.name}</span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <strong>Title:</strong> {translations.title?.[lang.code] || formData.title}
+                        </div>
+                        <div>
+                          <strong>Content:</strong> {translations.content?.[lang.code] || formData.content}
+                        </div>
+                        {formData.correctAnswer && (
+                          <div>
+                            <strong>Answer:</strong> {translations.correctAnswer?.[lang.code] || formData.correctAnswer}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Button */}
